@@ -1,0 +1,58 @@
+{
+    "_id": {
+        "$oid": "65d748f00c3aa01a82023d88"
+    },
+    "idInterfaz": "abbvie_944_SP44_BUS_4305",
+    "description": "EVENTO CONFIRMACIÓN RECEPCIÓN | 944 | ABBVIE | BUS-4071",
+    "type": "REST",
+    "routes": [
+        {
+            "metaData": {
+                "listToValidate": ["Cabecera,FechaRecepcion","ReferenciaProveedor","LoteCajitaFabricante"] ,
+
+                "idInterfaz": "abbvie_944_123_BUS_4305",
+                "processFullKafkaMessage": true
+
+            },
+            "topic": "COREv2",
+            "topicDescription": "Reglas negocios",
+            "node": "EDI"
+        },
+        {
+            "metaData": {
+                "idInterfaz": "abbvie_944_123_BUS_4258"
+            },
+            "topic": "COREv2",
+            "topicDescription": "Reglas negocios",
+            "node": "EDI"
+        },
+        {
+            "metaData": {
+                "type": "abbvie_944_123_BUS_4071",
+                "from": "abbvie",
+                "lineSeparator": "\n",
+                "dataSeparator": ",",
+                "version": "2"
+            },
+            "topic": "JSON2PLAIN",
+            "topicDescription": "Transformación",
+            "node": "EDI"
+        },
+        {
+            "metaData": {
+                "route": "sftp://sftp_test1@169.57.220.38/opendev_dev/intercambio/abbvie/944/output?password=Open$$1978@",
+                "fileName": "944.CSV.ANDREANI.{yyMMddHHmmss}"
+            },
+            "topic": "SENDERSFTP",
+            "topicDescription": "Servidor SFTP",
+            "node": "EDI"
+        }
+    ],
+    "notifications": {
+        "attachInput": "true",
+        "attachOutput": "true",
+        "onSuccess": "picone.w@opendevpro.com,barbosa.l@opendevpro.com",
+        "onError": "lombardo.m@opendevpro.com,barbosa.l@opendevpro.com,picone.w@opendevpro.com,presilla.r@opendevpro.com"
+    },
+    "clientId": "andreani"
+}

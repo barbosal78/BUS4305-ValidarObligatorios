@@ -1,0 +1,162 @@
+package com.opendevpro.drls; 
+ 
+import com.opendevpro.model.GenericObjectData; 
+import com.opendevpro.exceptions.RulesExecutionException; 
+import static com.opendevpro.utils.DateUtils.maskDate; 
+import java.util.concurrent.TimeUnit; 
+import java.text.SimpleDateFormat; 
+import java.text.ParseException; 
+import org.json.JSONException; 
+import java.util.ArrayList; 
+import java.util.Arrays; 
+import java.util.List; 
+import java.util.Date; 
+import java.util.Map; 
+function String buscarNull(Object data , String[] ruta,Integer index ,Integer indice){
+            String rutaString;
+            rutaString= (String) ruta[index];
+            Integer indiceList=0;
+
+             if (rutaString.contains("[") ) { 
+                             String[] rutaConIndice = rutaString.split("\\[");
+                             rutaString = rutaConIndice[0];
+                             indiceList =Integer.parseInt(rutaConIndice[1].replaceAll("\\[|\\]","") );                            
+            }
+                
+             if( data instanceof Map ) {
+                Map mapa= (Map)data;
+
+              if( !mapa.containsKey(rutaString) ){
+                  
+                      return rutaString;
+                                               
+               }else if ((ruta.length-1) > index) {
+                  index++;      
+
+                     return buscarNull( mapa.get(rutaString), ruta, index , indiceList) ;
+                
+               }
+                                
+                
+            }   
+            else if (data instanceof List ){            
+             
+                    List lista= (List)data;                     
+
+                     if(indice > lista.size()){ 
+                        return rutaString;
+                     } else                 
+                      if ((ruta.length-1) >= index) {      
+           
+                           return buscarNull( lista.get(indiceList), ruta, index, indiceList) ;
+                      } 
+                     }     else return rutaString;                   
+                
+            
+ 
+     return "";
+      
+ 
+}
+ 
+function String buscarEmpty(Object data , String[] ruta,Integer index ,Integer indice){
+            String rutaString;
+            rutaString= (String) ruta[index];
+            Integer indiceList=0;
+       
+             if (rutaString.contains("[") ) { 
+                             String[] rutaConIndice = rutaString.split("\\[");
+                             rutaString = rutaConIndice[0];
+                             indiceList =Integer.parseInt(rutaConIndice[1].replaceAll("\\[|\\]","") );                            
+            }
+                
+             if( data instanceof Map ) {
+                Map mapa= (Map)data; 
+                  
+                  if( mapa.get(rutaString)!=null && mapa.get(rutaString) instanceof String ){
+                              
+
+                        String resultado =(String) mapa.get(rutaString) ;                
+                        if(resultado.equals("") || resultado.isBlank() ) {
+                           return rutaString;
+                        }                              
+                     }else if ((ruta.length-1) > index) {
+                        index++;                   
+                     return buscarEmpty( mapa.get(rutaString), ruta, index , indiceList) ;
+                     }
+                                
+                
+            }   
+            else if (data instanceof List ){            
+
+                    List lista= (List)data;   
+               
+                    if( lista.get(indice)!=null && lista.get(indice) instanceof String ){
+                            String resultado =(String) lista.get(indice) ;    
+                    
+                            if(resultado.equals("")|| resultado.isBlank() ) {
+                                return rutaString;
+                            } 
+                    }else  if ((ruta.length-1) >= index) {                 
+                          return buscarEmpty( lista.get(indiceList), ruta, index, indiceList) ;
+                    }                           
+                
+            } 
+ 
+     return "";
+      
+ 
+}
+ 
+function Boolean validarCamposObligatorios(List obligatorios, Object cuerpo) { 
+    // cuerpo= data.get("body");
+    List salida=  new ArrayList();
+    List errores = new ArrayList();
+    String resultadoFinal="";
+    Boolean  valido = false;
+    for (Object obl: obligatorios){
+        String campo = (String)obl;
+         String[] ruta = campo.split(",");
+         String  rutaString = (String) ruta[ruta.length -1];  
+      
+         if (rutaString.contains("|") ) { 
+              String[] rutaEmpty = rutaString.split("\\|");
+                ruta[ruta.length-1] =  rutaEmpty[0];         
+
+                resultadoFinal = buscarEmpty(cuerpo, ruta,0 ,0);
+         } else resultadoFinal = buscarNull(cuerpo, ruta,0 ,0);
+          
+        if(!resultadoFinal.equals("")) errores.add(obl);
+         
+
+    } 
+      if(errores.size() >0) throw new RulesExecutionException("V001|Campo obligatorio no encontrado: "+errores);
+       else valido = true;
+   return valido;
+
+}
+/***/ 
+rule "Rules Abbvi 944: Check de campos obligatorios" 
+ 
+when 
+  GenericObjectData($map: map) 
+  
+ 
+then 
+ System.out.println("Listad " );
+
+  /** Debug **/ 
+  List listaObligatorios = new ArrayList();
+  Object body = $map.get("body");
+   System.out.println("Listad 2"+body);
+
+  Map metaData = (Map) $map.get("metaData");
+     System.out.println("Listad 3"+metaData);
+
+  listaObligatorios =  (List) metaData.get("listToValidate");
+
+ System.out.println("Listado Obligatorio" + listaObligatorios);
+
+ validarCamposObligatorios(listaObligatorios, body);
+
+end 
